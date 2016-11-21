@@ -8,6 +8,8 @@
  * @author    Duncan Cameron
  * @copyright 2016 Duncan Cameron
  * @license   http://www.gnu.org/licenses/gpl.html GNU General Public License, Version 3
+ * 
+ * @see       https://developers.google.com/recaptcha/intro
  */
 
 /**
@@ -42,6 +44,63 @@ class RecaptchaPlugin extends phplistPlugin
         ),
     );
 
+    /**
+     * Derive the language code from the subscribe page language file name.
+     *
+     * @see https://developers.google.com/recaptcha/docs/language
+     * 
+     * @param string $languageFile the language file name
+     * 
+     * @return string the language code, or an empty string when it cannot
+     *                be derived.
+     */
+    private function languageCode($languageFile)
+    {
+        $fileToCode = array(
+            'afrikaans.inc' => 'af',
+            'arabic.inc' => 'ar',
+            'belgianflemish.inc' => '',
+            'bulgarian.inc' => 'bg',
+            'catalan.inc' => 'ca',
+            'croatian.inc' => 'hr',
+            'czech.inc' => 'cs',
+            'danish.inc' => 'da',
+            'dutch.inc' => 'nl',
+            'english-gaelic.inc' => 'en-GB',
+            'english.inc' => 'en-GB',
+            'english-usa.inc' => 'en',
+            'estonian.inc' => 'et',
+            'finnish.inc' => 'fi',
+            'french.inc' => 'fr',
+            'german.inc' => 'de',
+            'greek.inc' => 'el',
+            'hebrew.inc' => 'iw',
+            'hungarian.inc' => 'hu',
+            'indonesian.inc' => 'id',
+            'italian.inc' => 'it',
+            'japanese.inc' => 'ja',
+            'latinamerican.inc' => 'es',
+            'norwegian.inc' => 'no',
+            'persian.inc' => 'fa',
+            'polish.inc' => 'pl',
+            'portuguese.inc' => 'pt',
+            'portuguese_pt.inc' => 'pt-PT',
+            'romanian.inc' => 'ro',
+            'russian.inc' => 'ru',
+            'serbian.inc' => 'sr',
+            'slovenian.inc' => 'sl',
+            'spanish.inc' => 'es',
+            'swedish.inc' => 'sv',
+            'swissgerman.inc' => 'de-CH',
+            'tchinese.inc' => 'zh-TW',
+            'turkish.inc' => 'tr',
+            'ukrainian.inc' => 'uk',
+            'usa.inc' => 'en',
+            'vietnamese.inc' => 'vi',
+        );
+
+        return isset($fileToCode[$languageFile]) ? $fileToCode[$languageFile] : '';
+    }
     /**
      * Class constructor.
      */
@@ -83,6 +142,9 @@ class RecaptchaPlugin extends phplistPlugin
     /**
      * Provide the recaptcha html to be included in a subscription page.
      *
+     * @param array $pageData subscribe page fields
+     * @param int   $userId   user id
+     * 
      * @return string
      */
     public function displaySubscriptionChoice($pageData, $userID = 0)
@@ -90,10 +152,18 @@ class RecaptchaPlugin extends phplistPlugin
         if (!$this->recaptchaEnabled) {
             return '';
         }
+        $apiUrl = 'https://www.google.com/recaptcha/api.js';
+
+        if (isset($pageData['language_file'])) {
+            $languageCode = $this->languageCode($pageData['language_file']);
+
+            if ($languageCode !== '') {
+                $apiUrl .= "?hl=$languageCode";
+            }
+        }
         $html = <<<END
 <div class="g-recaptcha" data-sitekey="{$this->siteKey}"></div>
-    <script type="text/javascript"
-        src="https://www.google.com/recaptcha/api.js">
+    <script type="text/javascript" src="$apiUrl">
     </script>
 END;
 
@@ -103,6 +173,8 @@ END;
     /**
      * Provide additional validation when a subscribe page has been submitted.
      *
+     * @param array $pageData subscribe page fields
+     * 
      * @return string an error message to be displayed or an empty string
      *                when validation is successful.
      */
