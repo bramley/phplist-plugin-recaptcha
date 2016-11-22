@@ -1,2 +1,6 @@
+version 1.0.1+20161122
+      Display the widget in the language of the subscribe page.
+      Fix problem with settings not being displayed.
+
 version 1.0.0+20161118
       First version

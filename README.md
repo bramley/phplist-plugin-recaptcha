@@ -29,4 +29,6 @@ On the Settings page you must specify:
 ## Version history ##
 
     version         Description
+    1.0.1+20161122  Fix problem with settings not being displayed
+                    Display recaptcha in the language of the subscribe page
     1.0.0+20161118  First release

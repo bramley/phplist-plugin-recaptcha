@@ -134,6 +134,7 @@ class RecaptchaPlugin extends phplistPlugin
      */
     public function activate()
     {
+        parent::activate();
         $this->siteKey = getConfig('recaptcha_sitekey');
         $this->secretKey = getConfig('recaptcha_secretkey');
         $this->recaptchaEnabled = $this->siteKey !== '' && $this->secretKey !== '';
