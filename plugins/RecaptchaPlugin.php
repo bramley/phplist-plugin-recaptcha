@@ -29,8 +29,8 @@ class RecaptchaPlugin extends phplistPlugin
     /** @var string the secret key */
     private $secretKey;
 
-    /** @var bool whether reCAPTCHA is enabled */
-    private $recaptchaEnabled;
+    /** @var bool whether reCAPTCHA keys have been entered */
+    private $keysEntered;
 
     /*
      *  Inherited from phplistPlugin
@@ -201,7 +201,7 @@ class RecaptchaPlugin extends phplistPlugin
 
         $this->siteKey = getConfig('recaptcha_sitekey');
         $this->secretKey = getConfig('recaptcha_secretkey');
-        $this->recaptchaEnabled = $this->siteKey !== '' && $this->secretKey !== '';
+        $this->keysEntered = $this->siteKey !== '' && $this->secretKey !== '';
     }
 
     /**
@@ -214,7 +214,11 @@ class RecaptchaPlugin extends phplistPlugin
      */
     public function displaySubscriptionChoice($pageData, $userID = 0)
     {
-        if (!$this->recaptchaEnabled) {
+        if (empty($pageData['recaptcha_include'])) {
+            return '';
+        }
+
+        if (!$this->keysEntered) {
             return '';
         }
         $apiUrl = 'https://www.google.com/recaptcha/api.js';
@@ -246,7 +250,11 @@ END;
     {
         require __DIR__ . '/RecaptchaPlugin/src/autoload.php';
 
-        if (!$this->recaptchaEnabled) {
+        if (empty($pageData['recaptcha_include'])) {
+            return '';
+        }
+
+        if (!$this->keysEntered) {
             return '';
         }
 
@@ -259,5 +267,41 @@ END;
         return $resp->isSuccess()
             ? ''
             : implode(', ', $resp->getErrorCodes());
+    }
+
+    /**
+     * Provide html for the include reCAPTCHA option when editing a subscribe page.
+     *
+     * @param array $pageData subscribe page fields
+     * 
+     * @return string additional html
+     */
+    public function displaySubscribepageEdit($pageData)
+    {
+        $checked = (isset($pageData['recaptcha_include']) && $pageData['recaptcha_include']) ? 'checked' : '';
+
+        return s('Include reCAPTCHA in the subscribe page')
+            . sprintf(': <input type="checkbox" name="recaptcha_include" value="1" %s />', $checked);
+    }
+
+    /**
+     * Save the setting for including reCAPTCHA in the subscribe page.
+     *
+     * @param int $id subscribe page id
+     */
+    public function processSubscribePageEdit($id)
+    {
+        global $tables;
+
+        Sql_Query(
+            sprintf(
+                'REPLACE INTO %s
+                (id, name, data)
+                VALUES(%d, "recaptcha_include", "%s")',
+                $tables['subscribepage_data'],
+                $id,
+                isset($_POST['recaptcha_include']) ? 1 : 0
+            )
+        );
     }
 }
