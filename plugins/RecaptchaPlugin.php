@@ -1,5 +1,4 @@
 <?php
-
 /**
  * RecaptchaPlugin for phplist.
  * 
@@ -18,10 +17,23 @@
  */
 class RecaptchaPlugin extends phplistPlugin
 {
+    /** @var string the name of the version file */
     const VERSION_FILE = 'version.txt';
 
+    /** @var array the available request methods */
+    private $requestMethods = array();
+
+    /** @var string the site key */
+    private $siteKey;
+
+    /** @var string the secret key */
+    private $secretKey;
+
+    /** @var bool whether reCAPTCHA is enabled */
+    private $recaptchaEnabled;
+
     /*
-     *  Inherited variables
+     *  Inherited from phplistPlugin
      */
     public $name = 'reCAPTCHA Plugin';
     public $enabled = true;
@@ -29,20 +41,44 @@ class RecaptchaPlugin extends phplistPlugin
     public $authors = 'Duncan Cameron';
     public $settings = array(
         'recaptcha_sitekey' => array(
-          'description' => 'reCAPTCHA site key',
-          'type' => 'text',
-          'value' => '',
-          'allowempty' => false,
-          'category' => 'Recaptcha',
+            'description' => 'reCAPTCHA site key',
+            'type' => 'text',
+            'value' => '',
+            'allowempty' => false,
+            'category' => 'Recaptcha',
         ),
         'recaptcha_secretkey' => array(
-          'description' => 'reCAPTCHA secret key',
-          'type' => 'text',
-          'value' => '',
-          'allowempty' => false,
-          'category' => 'Recaptcha',
+            'description' => 'reCAPTCHA secret key',
+            'type' => 'text',
+            'value' => '',
+            'allowempty' => false,
+            'category' => 'Recaptcha',
+        ),
+        'recaptcha_request_method' => array(
+            'description' => '',
+            'type' => 'text',
+            'value' => '',
+            'allowempty' => false,
+            'category' => 'Recaptcha',
         ),
     );
+
+    /**
+     * Creates an instance of the request method. Use the entered config
+     * value if valid, otherwise use the first method.
+     *
+     * @return \ReCaptcha\RequestMethod
+     */
+    private function createRequestMethod()
+    {
+        $configValue = getConfig('recaptcha_request_method');
+        $method = (isset($this->requestMethods[$configValue]))
+            ? $this->requestMethods[$configValue]
+            : reset($this->requestMethods);
+        $class = $method['class'];
+
+        return new $class();
+    }
 
     /**
      * Derive the language code from the subscribe page language file name.
@@ -103,6 +139,7 @@ class RecaptchaPlugin extends phplistPlugin
     }
     /**
      * Class constructor.
+     * Initialises some dynamic variables.
      */
     public function __construct()
     {
@@ -111,6 +148,25 @@ class RecaptchaPlugin extends phplistPlugin
             ? file_get_contents($f)
             : '';
         parent::__construct();
+        $this->requestMethods = array();
+
+        if (ini_get('allow_url_fopen') == '1') {
+            $this->requestMethods['fopen'] = array(
+                'class' => '\ReCaptcha\RequestMethod\Post',
+            );
+        }
+
+        if (extension_loaded('curl')) {
+            $this->requestMethods['curl'] = array(
+                'class' => '\ReCaptcha\RequestMethod\CurlPost',
+            );
+        }
+
+        if (extension_loaded('openssl')) {
+            $this->requestMethods['openssl'] = array(
+                'class' => '\ReCaptcha\RequestMethod\SocketPost',
+            );
+        }
     }
 
     /**
@@ -121,20 +177,28 @@ class RecaptchaPlugin extends phplistPlugin
     public function dependencyCheck()
     {
         return array(
-            'curl or http wrapper available' => (
-                extension_loaded('curl') || ini_get('allow_url_fopen') == '1'
-            ),
+            'curl extension, openssl extension or http wrapper available' => count($this->requestMethods) > 0,
         );
     }
 
     /**
-     * Use this hook to cache the plugin's config settings.
+     * Add a configuration setting for the request method.
+     * Cache the plugin's config settings.
      * Recaptcha will be used only when both the site key and secrety key have
      * been entered.
      */
     public function activate()
     {
+        $description = 'The method used to send reCAPTCHA requests.';
+
+        if (count($this->requestMethods) > 1) {
+            $description .= 'This must be one of: ' . implode(', ', array_keys($this->requestMethods));
+        }
+        $this->settings['recaptcha_request_method']['description'] = $description;
+        $methods = array_keys($this->requestMethods);
+        $this->settings['recaptcha_request_method']['value'] = $methods[0];
         parent::activate();
+
         $this->siteKey = getConfig('recaptcha_sitekey');
         $this->secretKey = getConfig('recaptcha_secretkey');
         $this->recaptchaEnabled = $this->siteKey !== '' && $this->secretKey !== '';
@@ -164,8 +228,7 @@ class RecaptchaPlugin extends phplistPlugin
         }
         $html = <<<END
 <div class="g-recaptcha" data-sitekey="{$this->siteKey}"></div>
-    <script type="text/javascript" src="$apiUrl">
-    </script>
+<script type="text/javascript" src="$apiUrl"></script>
 END;
 
         return $html;
@@ -190,11 +253,7 @@ END;
         if (!isset($_POST['g-recaptcha-response'])) {
             return 'reCAPTCHA must be used';
         }
-
-        $requestMethod = extension_loaded('curl')
-            ? new \ReCaptcha\RequestMethod\CurlPost()
-            : new \ReCaptcha\RequestMethod\Post();
-        $recaptcha = new \ReCaptcha\ReCaptcha($this->secretKey, $requestMethod);
+        $recaptcha = new \ReCaptcha\ReCaptcha($this->secretKey, $this->createRequestMethod());
         $resp = $recaptcha->verify($_POST['g-recaptcha-response'], $_SERVER['REMOTE_ADDR']);
 
         return $resp->isSuccess()

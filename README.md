@@ -11,7 +11,7 @@ for information on how reCAPTCHA works.
 
 Requires php version 5.4 or later.
 
-Either the curl extension must be available or the ini setting 'allow_url_fopen' must be enabled.
+At least one of the curl extension, the openssl extension, or the ini setting 'allow_url_fopen' must be enabled.
 
 You must also create an API key to use reCAPTCHA, then enter the site key and the secret key into the plugin's settings.
 
@@ -24,6 +24,7 @@ Install on the Plugins page (menu Config > Plugins) using the package URL
 On the Settings page you must specify:
 
 * The reCAPTCHA site key and secret key
+* The method to be used for requests to the reCAPTCHA service
 
 
 ## Version history ##
