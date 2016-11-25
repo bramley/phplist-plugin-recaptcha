@@ -16,20 +16,17 @@ At least one of the curl extension, the openssl extension, or the ini setting 'a
 You must also create an API key to use reCAPTCHA, then enter the site key and the secret key into the plugin's settings.
 
 ### Install through phplist ###
-Install on the Plugins page (menu Config > Plugins) using the package URL
+Install on the Manage Plugins page (menu Config > Plugins) using the package URL
 `https://github.com/bramley/phplist-plugin-recaptcha/archive/master.zip`
 
-###Settings###
+### Usage ###
 
-On the Settings page you must specify:
-
-* The reCAPTCHA site key and secret key
-* The method to be used for requests to the reCAPTCHA service
-
+For guidance on configuring and using the plugin see the documentation page https://resources.phplist.com/plugin/recaptcha
 
 ## Version history ##
 
     version         Description
+    1.1.0+20161125  Allow recaptcha to be optionally included on each subscribe page
     1.0.1+20161122  Fix problem with settings not being displayed
                     Display recaptcha in the language of the subscribe page
     1.0.0+20161118  First release

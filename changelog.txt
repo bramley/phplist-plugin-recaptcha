@@ -1,3 +1,8 @@
+version 1.1.0+20161125
+      Detect which request methods are available. Add a config setting to choose the request method.
+      Allow recaptcha to be optionally included on each subscribe page.
+      Move usage guidance to the plugin's documentation page.
+
 version 1.0.1+20161122
       Display the widget in the language of the subscribe page.
       Fix problem with settings not being displayed.
