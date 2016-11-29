@@ -1,3 +1,6 @@
+version 1.2.0+20161129
+      Allow configuration of the colour theme and size of the reCAPTCHA widget.
+
 version 1.1.0+20161125
       Detect which request methods are available. Add a config setting to choose the request method.
       Allow recaptcha to be optionally included on each subscribe page.

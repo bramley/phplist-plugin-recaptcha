@@ -38,6 +38,7 @@ class RecaptchaPlugin extends phplistPlugin
     public $name = 'reCAPTCHA Plugin';
     public $enabled = true;
     public $description = 'Adds a reCAPTCHA field to subscribe forms';
+    public $documentationUrl = 'https://resources.phplist.com/plugin/recaptcha';
     public $authors = 'Duncan Cameron';
     public $settings = array(
         'recaptcha_sitekey' => array(
@@ -178,6 +179,7 @@ class RecaptchaPlugin extends phplistPlugin
     {
         return array(
             'curl extension, openssl extension or http wrapper available' => count($this->requestMethods) > 0,
+            'Common Plugin installed' => phpListPlugin::isEnabled('CommonPlugin'),
         );
     }
 
@@ -231,7 +233,7 @@ class RecaptchaPlugin extends phplistPlugin
             }
         }
         $html = <<<END
-<div class="g-recaptcha" data-sitekey="{$this->siteKey}"></div>
+<div class="g-recaptcha" data-sitekey="{$this->siteKey}" data-size="{$pageData['recaptcha_size']}" data-theme="{$pageData['recaptcha_theme']}"></div>
 <script type="text/javascript" src="$apiUrl"></script>
 END;
 
@@ -270,7 +272,7 @@ END;
     }
 
     /**
-     * Provide html for the include reCAPTCHA option when editing a subscribe page.
+     * Provide html for the reCAPTCHA options when editing a subscribe page.
      *
      * @param array $pageData subscribe page fields
      * 
@@ -278,14 +280,23 @@ END;
      */
     public function displaySubscribepageEdit($pageData)
     {
-        $checked = (isset($pageData['recaptcha_include']) && $pageData['recaptcha_include']) ? 'checked' : '';
+        $include = isset($pageData['recaptcha_include']) ? (bool) $pageData['recaptcha_include'] : false;
+        $theme = isset($pageData['recaptcha_theme']) ? $pageData['recaptcha_theme'] : 'light';
+        $size = isset($pageData['recaptcha_size']) ? $pageData['recaptcha_size'] : 'normal';
+        $html =
+            CHtml::label(s('Include reCAPTCHA in the subscribe page'), 'recaptcha_include')
+            . CHtml::checkBox('recaptcha_include', $include, array('value' => 1, 'uncheckValue' => 0))
+            . '<p></p>'
+            . CHtml::label(s('The colour theme of the reCAPTCHA widget'), 'recaptcha_theme')
+            . CHtml::dropDownList('recaptcha_theme', $theme, array('light' => 'light', 'dark' => 'dark'))
+            . CHtml::label(s('The size of the reCAPTCHA widget'), 'recaptcha_size')
+            . CHtml::dropDownList('recaptcha_size', $size, array('normal' => 'normal', 'compact' => 'compact'));
 
-        return s('Include reCAPTCHA in the subscribe page')
-            . sprintf(': <input type="checkbox" name="recaptcha_include" value="1" %s />', $checked);
+        return $html;
     }
 
     /**
-     * Save the setting for including reCAPTCHA in the subscribe page.
+     * Save the reCAPTCHA settings.
      *
      * @param int $id subscribe page id
      */
@@ -294,13 +305,21 @@ END;
         global $tables;
 
         Sql_Query(
-            sprintf(
-                'REPLACE INTO %s
+            sprintf('
+                REPLACE INTO %s
                 (id, name, data)
-                VALUES(%d, "recaptcha_include", "%s")',
+                VALUES
+                (%d, "recaptcha_include", "%s"),
+                (%d, "recaptcha_theme", "%s"),
+                (%d, "recaptcha_size", "%s")
+                ',
                 $tables['subscribepage_data'],
                 $id,
-                isset($_POST['recaptcha_include']) ? 1 : 0
+                $_POST['recaptcha_include'],
+                $id,
+                $_POST['recaptcha_theme'],
+                $id,
+                $_POST['recaptcha_size']
             )
         );
     }

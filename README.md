@@ -11,6 +11,8 @@ for information on how reCAPTCHA works.
 
 Requires php version 5.4 or later.
 
+From version 1.2.0 the plugin requires CommonPlugin to be installed, see https://resources.phplist.com/plugin/common
+
 At least one of the curl extension, the openssl extension, or the ini setting 'allow_url_fopen' must be enabled.
 
 You must also create an API key to use reCAPTCHA, then enter the site key and the secret key into the plugin's settings.
@@ -26,6 +28,7 @@ For guidance on configuring and using the plugin see the documentation page http
 ## Version history ##
 
     version         Description
+    1.2.0+20161129  Allow configuration of the colour theme and size of the widget
     1.1.0+20161125  Allow recaptcha to be optionally included on each subscribe page
     1.0.1+20161122  Fix problem with settings not being displayed
                     Display recaptcha in the language of the subscribe page
