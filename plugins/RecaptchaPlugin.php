@@ -1,13 +1,13 @@
 <?php
 /**
  * RecaptchaPlugin for phplist.
- * 
+ *
  * This file is a part of RecaptchaPlugin.
- * 
+ *
  * @author    Duncan Cameron
- * @copyright 2016 Duncan Cameron
+ * @copyright 2016-2017 Duncan Cameron
  * @license   http://www.gnu.org/licenses/gpl.html GNU General Public License, Version 3
- * 
+ *
  * @see       https://developers.google.com/recaptcha/intro
  */
 
@@ -56,9 +56,10 @@ class RecaptchaPlugin extends phplistPlugin
             'category' => 'Recaptcha',
         ),
         'recaptcha_request_method' => array(
-            'description' => '',
-            'type' => 'text',
+            'description' => 'The method to use for sending reCAPTCHA requests',
+            'type' => 'select',
             'value' => '',
+            'values' => array(),
             'allowempty' => false,
             'category' => 'Recaptcha',
         ),
@@ -85,11 +86,11 @@ class RecaptchaPlugin extends phplistPlugin
      * Derive the language code from the subscribe page language file name.
      *
      * @see https://developers.google.com/recaptcha/docs/language
-     * 
+     *
      * @param string $languageFile the language file name
-     * 
+     *
      * @return string the language code, or an empty string when it cannot
-     *                be derived.
+     *                be derived
      */
     private function languageCode($languageFile)
     {
@@ -138,6 +139,7 @@ class RecaptchaPlugin extends phplistPlugin
 
         return isset($fileToCode[$languageFile]) ? $fileToCode[$languageFile] : '';
     }
+
     /**
      * Class constructor.
      * Initialises some dynamic variables.
@@ -145,26 +147,32 @@ class RecaptchaPlugin extends phplistPlugin
     public function __construct()
     {
         $this->coderoot = dirname(__FILE__) . '/' . __CLASS__ . '/';
+        parent::__construct();
         $this->version = (is_file($f = $this->coderoot . self::VERSION_FILE))
             ? file_get_contents($f)
             : '';
-        parent::__construct();
         $this->requestMethods = array();
 
         if (ini_get('allow_url_fopen') == '1') {
             $this->requestMethods['fopen'] = array(
+                'method' => 'fopen',
+                'description' => 'http wrapper',
                 'class' => '\ReCaptcha\RequestMethod\Post',
             );
         }
 
         if (extension_loaded('curl')) {
             $this->requestMethods['curl'] = array(
+                'method' => 'curl',
+                'description' => 'curl extension',
                 'class' => '\ReCaptcha\RequestMethod\CurlPost',
             );
         }
 
         if (extension_loaded('openssl')) {
             $this->requestMethods['openssl'] = array(
+                'method' => 'openssl',
+                'description' => 'openssl extension',
                 'class' => '\ReCaptcha\RequestMethod\SocketPost',
             );
         }
@@ -180,6 +188,7 @@ class RecaptchaPlugin extends phplistPlugin
         return array(
             'curl extension, openssl extension or http wrapper available' => count($this->requestMethods) > 0,
             'Common Plugin installed' => phpListPlugin::isEnabled('CommonPlugin'),
+            'phpList version 3.3.0 or later' => version_compare(VERSION, '3.3') > 0,
         );
     }
 
@@ -191,14 +200,11 @@ class RecaptchaPlugin extends phplistPlugin
      */
     public function activate()
     {
-        $description = 'The method used to send reCAPTCHA requests.';
+        $methods = array_column($this->requestMethods, 'description', 'method');
+        $firstMethod = reset($this->requestMethods);
+        $this->settings['recaptcha_request_method']['value'] = $firstMethod['method'];
+        $this->settings['recaptcha_request_method']['values'] = $methods;
 
-        if (count($this->requestMethods) > 1) {
-            $description .= 'This must be one of: ' . implode(', ', array_keys($this->requestMethods));
-        }
-        $this->settings['recaptcha_request_method']['description'] = $description;
-        $methods = array_keys($this->requestMethods);
-        $this->settings['recaptcha_request_method']['value'] = $methods[0];
         parent::activate();
 
         $this->siteKey = getConfig('recaptcha_sitekey');
@@ -211,7 +217,7 @@ class RecaptchaPlugin extends phplistPlugin
      *
      * @param array $pageData subscribe page fields
      * @param int   $userId   user id
-     * 
+     *
      * @return string
      */
     public function displaySubscriptionChoice($pageData, $userID = 0)
@@ -244,9 +250,9 @@ END;
      * Provide additional validation when a subscribe page has been submitted.
      *
      * @param array $pageData subscribe page fields
-     * 
+     *
      * @return string an error message to be displayed or an empty string
-     *                when validation is successful.
+     *                when validation is successful
      */
     public function validateSubscriptionPage($pageData)
     {
@@ -275,7 +281,7 @@ END;
      * Provide html for the reCAPTCHA options when editing a subscribe page.
      *
      * @param array $pageData subscribe page fields
-     * 
+     *
      * @return string additional html
      */
     public function displaySubscribepageEdit($pageData)
