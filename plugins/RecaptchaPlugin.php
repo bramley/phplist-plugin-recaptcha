@@ -32,6 +32,9 @@ class RecaptchaPlugin extends phplistPlugin
     /** @var bool whether reCAPTCHA keys have been entered */
     private $keysEntered;
 
+    /** @var string warning to display when captcha not completed */
+    private $incompleteWarning;
+
     /*
      *  Inherited from phplistPlugin
      */
@@ -40,6 +43,7 @@ class RecaptchaPlugin extends phplistPlugin
     public $description = 'Adds a reCAPTCHA field to subscribe forms';
     public $documentationUrl = 'https://resources.phplist.com/plugin/recaptcha';
     public $authors = 'Duncan Cameron';
+    public $coderoot = __DIR__ . '/' . __CLASS__ . '/';
     public $settings = array(
         'recaptcha_sitekey' => array(
             'description' => 'reCAPTCHA site key',
@@ -146,7 +150,6 @@ class RecaptchaPlugin extends phplistPlugin
      */
     public function __construct()
     {
-        $this->coderoot = dirname(__FILE__) . '/' . __CLASS__ . '/';
         parent::__construct();
         $this->version = (is_file($f = $this->coderoot . self::VERSION_FILE))
             ? file_get_contents($f)
@@ -210,6 +213,7 @@ class RecaptchaPlugin extends phplistPlugin
         $this->siteKey = getConfig('recaptcha_sitekey');
         $this->secretKey = getConfig('recaptcha_secretkey');
         $this->keysEntered = $this->siteKey !== '' && $this->secretKey !== '';
+        $this->incompleteWarning = s('Please complete the reCAPTCHA');
     }
 
     /**
@@ -238,12 +242,24 @@ class RecaptchaPlugin extends phplistPlugin
                 $apiUrl .= "?hl=$languageCode";
             }
         }
-        $html = <<<END
-<div class="g-recaptcha" data-sitekey="{$this->siteKey}" data-size="{$pageData['recaptcha_size']}" data-theme="{$pageData['recaptcha_theme']}"></div>
-<script type="text/javascript" src="$apiUrl"></script>
+        $format = <<<'END'
+<div class="g-recaptcha" data-sitekey="%s" data-size="%s" data-theme="%s"></div>
+<script type="text/javascript" src="%s"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+<script type="text/javascript">
+$( document ).ready(function() {
+    $("form[name=subscribeform]").submit(function(ev) {
+        if (grecaptcha.getResponse() != "") {
+            return true;
+        }
+        alert("%s");
+        return false;
+    });
+});
+</script>
 END;
 
-        return $html;
+        return sprintf($format, $this->siteKey, $pageData['recaptcha_size'], $pageData['recaptcha_theme'], $apiUrl, $this->incompleteWarning);
     }
 
     /**
@@ -256,7 +272,7 @@ END;
      */
     public function validateSubscriptionPage($pageData)
     {
-        require __DIR__ . '/RecaptchaPlugin/src/autoload.php';
+        require $this->coderoot . 'src/autoload.php';
 
         if (empty($pageData['recaptcha_include'])) {
             return '';
@@ -266,8 +282,8 @@ END;
             return '';
         }
 
-        if (!isset($_POST['g-recaptcha-response'])) {
-            return 'reCAPTCHA must be used';
+        if (empty($_POST['g-recaptcha-response'])) {
+            return $this->incompleteWarning;
         }
         $recaptcha = new \ReCaptcha\ReCaptcha($this->secretKey, $this->createRequestMethod());
         $resp = $recaptcha->verify($_POST['g-recaptcha-response'], $_SERVER['REMOTE_ADDR']);

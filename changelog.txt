@@ -1,3 +1,8 @@
+version 1.4.0+20180508
+      Add server and client-side jquery validation
+      Add English translations as basis for other languages
+      Tidy-up use of coderoot
+
 version 1.3.0+20170609
       Rename cs config file
       Use select input for recaptcha request method.
