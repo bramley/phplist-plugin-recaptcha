@@ -1,3 +1,7 @@
+version 1.4.1+20180522
+      Workaround to allow translations of text on public pages.
+      Allow settings captions to be translated.
+
 version 1.4.0+20180508
       Add server and client-side jquery validation
       Add English translations as basis for other languages
