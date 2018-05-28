@@ -30,6 +30,7 @@ For guidance on configuring and using the plugin see the documentation page http
 ## Version history ##
 
     version         Description
+    1.4.2+20180528  Translate frontend text separately to admin translations
     1.4.1+20180522  Workaround to allow translations of text on public pages
     1.4.0+20180508  Add server and client-side validation
     1.3.0+20170609  Use select input for recaptcha request method.

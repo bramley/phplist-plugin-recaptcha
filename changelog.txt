@@ -1,3 +1,6 @@
+version 1.4.2+20180528
+      Hold frontend translations in separate file to admin translations
+
 version 1.4.1+20180522
       Workaround to allow translations of text on public pages.
       Allow settings captions to be translated.

@@ -10,6 +10,7 @@
  *
  * @see       https://developers.google.com/recaptcha/intro
  */
+use phpList\plugin\Common\FrontendTranslator;
 
 /**
  * This class registers the plugin with phplist and hooks into the display and validation
@@ -122,82 +123,6 @@ class RecaptchaPlugin extends phplistPlugin
     }
 
     /**
-     * Derive the language code used for the admin interface from the subscribe page language file name.
-     *
-     * @param string $languageFile the language file name
-     *
-     * @return string the language code, or an empty string when it cannot
-     *                be derived
-     */
-    private function phplistLanguageCode($languageFile)
-    {
-        $fileToCode = array(
-            'afrikaans.inc' => 'af',
-            'arabic.inc' => 'ar',
-            'belgianflemish' => 'nl',
-            'bosnian.inc' => 'bs',
-            'bulgarian.inc' => 'bg',
-            'catalan.inc' => 'ca',
-            'croatian.inc' => 'hr',
-            'czech.inc' => 'cs',
-            'danish.inc' => 'da',
-            'dutch.inc' => 'nl',
-            'english-gaelic.inc' => 'gd',
-            'english.inc' => 'en',
-            'english-usa.inc' => 'en',
-            'estonian.inc' => 'et',
-            'finnish.inc' => 'fi',
-            'french.inc' => 'fr',
-            'german.inc' => 'de',
-            'greek.inc' => 'el',
-            'hebrew.inc' => 'iw',
-            'hungarian.inc' => 'hu',
-            'indonesian.inc' => 'id',
-            'italian.inc' => 'it',
-            'japanese.inc' => 'ja',
-            'latinamerican.inc' => 'es',
-            'norwegian.inc' => 'no',
-            'persian.inc' => 'fa',
-            'polish.inc' => 'pl',
-            'portuguese.inc' => 'pt',
-            'portuguese_pt.inc' => 'pt',
-            'romanian.inc' => 'ro',
-            'russian.inc' => 'ru',
-            'serbian.inc' => 'sr',
-            'slovenian.inc' => 'sl',
-            'spanish.inc' => 'es',
-            'swedish.inc' => 'sv',
-            'swissgerman.inc' => 'de-CH',
-            'tchinese.inc' => 'zh-TW',
-            'turkish.inc' => 'tr',
-            'ukrainian.inc' => 'uk',
-            'usa.inc' => 'en',
-            'vietnamese.inc' => 'vi',
-        );
-
-        return isset($fileToCode[$languageFile]) ? $fileToCode[$languageFile] : '';
-    }
-
-    /**
-     * Change the global I18N language to the subscribe page's language so that s() will work.
-     *
-     * @param array $pageData
-     */
-    private function changeGlobalLanguage($pageData)
-    {
-        global $I18N;
-
-        if (empty($pageData['language_file'])) {
-            return;
-        }
-        $phplistLanguageCode = $this->phplistLanguageCode($pageData['language_file']);
-
-        if ($phplistLanguageCode !== '') {
-            $I18N->language = $phplistLanguageCode;
-        }
-    }
-
-    /**
      * Class constructor.
      * Initialises some dynamic variables.
      */
@@ -241,9 +166,14 @@ class RecaptchaPlugin extends phplistPlugin
      */
     public function dependencyCheck()
     {
+        global $plugins;
+
         return array(
             'curl extension, openssl extension or http wrapper available' => count($this->requestMethods) > 0,
-            'Common Plugin installed' => phpListPlugin::isEnabled('CommonPlugin'),
+            'Common Plugin v3.7.17 or later installed' => (
+                phpListPlugin::isEnabled('CommonPlugin')
+                && version_compare($plugins['CommonPlugin']->version, '3.7.17') >= 0
+            ),
             'phpList version 3.3.0 or later' => version_compare(VERSION, '3.3') > 0,
         );
     }
@@ -332,7 +262,7 @@ $( document ).ready(function() {
 });
 </script>
 END;
-        $this->changeGlobalLanguage($pageData);
+        $translator = new FrontendTranslator($pageData, $this->coderoot);
 
         return sprintf(
             $format,
@@ -340,7 +270,7 @@ END;
             $pageData['recaptcha_size'],
             $pageData['recaptcha_theme'],
             $apiUrl,
-            s('Please complete the reCAPTCHA')
+            addslashes($translator->s('Please complete the reCAPTCHA'))
         );
     }
 
@@ -365,9 +295,9 @@ END;
         }
 
         if (empty($_POST['g-recaptcha-response'])) {
-            $this->changeGlobalLanguage($pageData);
+            $translator = new FrontendTranslator($pageData, $this->coderoot);
 
-            return s('Please complete the reCAPTCHA');
+            return $translator->s('Please complete the reCAPTCHA');
         }
         $recaptcha = new \ReCaptcha\ReCaptcha($this->secretKey, $this->createRequestMethod());
         $resp = $recaptcha->verify($_POST['g-recaptcha-response'], $_SERVER['REMOTE_ADDR']);
