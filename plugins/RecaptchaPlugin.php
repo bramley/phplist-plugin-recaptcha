@@ -40,11 +40,10 @@ class RecaptchaPlugin extends phplistPlugin
      *  Inherited from phplistPlugin
      */
     public $name = 'reCAPTCHA Plugin';
-    public $enabled = true;
     public $description = 'Adds a reCAPTCHA field to subscribe forms';
     public $documentationUrl = 'https://resources.phplist.com/plugin/recaptcha';
     public $authors = 'Duncan Cameron';
-    public $coderoot = __DIR__ . '/' . __CLASS__ . '/';
+    public $coderoot;
 
     /**
      * Creates an instance of the request method. Use the entered config
@@ -128,7 +127,10 @@ class RecaptchaPlugin extends phplistPlugin
      */
     public function __construct()
     {
+        $this->coderoot = __DIR__ . '/' . __CLASS__ . '/';
+
         parent::__construct();
+
         $this->version = (is_file($f = $this->coderoot . self::VERSION_FILE))
             ? file_get_contents($f)
             : '';

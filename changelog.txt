@@ -1,3 +1,6 @@
+version 1.4.3+20180617
+      Remove constant scalar expression to avoid dependency on php 5.6
+
 version 1.4.2+20180528
       Hold frontend translations in separate file to admin translations
 
