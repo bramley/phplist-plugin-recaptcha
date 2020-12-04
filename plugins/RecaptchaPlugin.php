@@ -292,6 +292,10 @@ END;
             return '';
         }
 
+        if ($_GET['p'] == 'asubscribe' && !empty($pageData['recaptcha_not_asubscribe'])) {
+            return '';
+        }
+
         if (!$this->keysEntered) {
             return '';
         }
@@ -319,12 +323,15 @@ END;
     public function displaySubscribepageEdit($pageData)
     {
         $include = isset($pageData['recaptcha_include']) ? (bool) $pageData['recaptcha_include'] : false;
+        $notAsubscribe = isset($pageData['recaptcha_not_asubscribe']) ? (bool) $pageData['recaptcha_not_asubscribe'] : true;
         $theme = isset($pageData['recaptcha_theme']) ? $pageData['recaptcha_theme'] : 'light';
         $size = isset($pageData['recaptcha_size']) ? $pageData['recaptcha_size'] : 'normal';
         $html =
             CHtml::label(s('Include reCAPTCHA in the subscribe page'), 'recaptcha_include')
             . CHtml::checkBox('recaptcha_include', $include, array('value' => 1, 'uncheckValue' => 0))
             . '<p></p>'
+            . CHtml::label(s('Do not validate reCAPTCHA for asubscribe'), 'recaptcha_not_asubscribe')
+            . CHtml::checkBox('recaptcha_not_asubscribe', $notAsubscribe, array('value' => 1, 'uncheckValue' => 0))
             . CHtml::label(s('The colour theme of the reCAPTCHA widget'), 'recaptcha_theme')
             . CHtml::dropDownList('recaptcha_theme', $theme, array('light' => 'light', 'dark' => 'dark'))
             . CHtml::label(s('The size of the reCAPTCHA widget'), 'recaptcha_size')
@@ -348,12 +355,15 @@ END;
                 (id, name, data)
                 VALUES
                 (%d, "recaptcha_include", "%s"),
+                (%d, "recaptcha_not_asubscribe", "%s"),
                 (%d, "recaptcha_theme", "%s"),
                 (%d, "recaptcha_size", "%s")
                 ',
                 $tables['subscribepage_data'],
                 $id,
                 $_POST['recaptcha_include'],
+                $id,
+                $_POST['recaptcha_not_asubscribe'],
                 $id,
                 $_POST['recaptcha_theme'],
                 $id,
