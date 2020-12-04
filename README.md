@@ -30,6 +30,7 @@ For guidance on configuring and using the plugin see the documentation page http
 ## Version history ##
 
     version         Description
+    1.5.0+20201204  Add subscribe page option to not validate reCaptcha for asubscribe
     1.4.3+20180617  Remove constant scalar expression to avoid dependency on php 5.6
     1.4.2+20180528  Translate frontend text separately to admin translations
     1.4.1+20180522  Workaround to allow translations of text on public pages
